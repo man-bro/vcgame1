@@ -8,33 +8,35 @@
 </head>
 <body>
   <main class="game-wrapper">
-    <section class="title-area">
-      <h1>점프 타이밍 게임</h1>
-      <p>장애물이 다가오면 타이밍에 맞춰 점프하세요!</p>
-    </section>
-
-    <section class="score-board">
-      <div>점수: <span id="score">0</span></div>
-      <div>최고점수: <span id="bestScore">0</span></div>
-    </section>
-
-    <section class="game-container" id="gameContainer">
-      <div class="cloud cloud-one"></div>
-      <div class="cloud cloud-two"></div>
-
-      <div class="player" id="player"></div>
-      <div class="obstacle" id="obstacle"></div>
-      <div class="ground"></div>
-
-      <div class="message-box" id="messageBox">
-        <h2>게임 시작</h2>
-        <p>스페이스바 또는 화면 클릭으로 시작하세요.</p>
+    <section class="game-card">
+      <div class="top-area">
+        <div>
+          <h1>점프 타이밍 게임</h1>
+          <p>장애물이 다가오면 타이밍에 맞춰 점프하세요!</p>
+        </div>
+        <div class="score-box">
+          <span>점수</span>
+          <strong id="score">0</strong>
+        </div>
       </div>
-    </section>
 
-    <section class="control-guide">
-      <button id="startButton">게임 시작 / 재시작</button>
-      <p>조작: 스페이스바 또는 마우스 클릭</p>
+      <div class="game-area" id="gameArea">
+        <div class="cloud cloud-one"></div>
+        <div class="cloud cloud-two"></div>
+        <div class="ground-line"></div>
+        <div class="player" id="player"></div>
+        <div class="obstacle" id="obstacle"></div>
+        <div class="message" id="message">
+          <strong>게임 시작</strong>
+          <span>스페이스바 또는 화면 클릭</span>
+        </div>
+      </div>
+
+      <div class="control-area">
+        <button id="startBtn">게임 시작</button>
+        <button id="soundBtn" class="sound-on">효과음 ON</button>
+        <p>조작: 스페이스바 / 마우스 클릭 / 터치</p>
+      </div>
     </section>
   </main>
 

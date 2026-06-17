@@ -6,99 +6,126 @@
 
 body {
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #d7ecff, #f7fbff);
-  color: #222;
+  background: linear-gradient(135deg, #dbeafe, #fef3c7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2937;
 }
 
 .game-wrapper {
-  width: min(900px, 92vw);
+  width: 100%;
+  max-width: 900px;
+  padding: 20px;
+}
+
+.game-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+.top-area {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.top-area p {
+  color: #6b7280;
+}
+
+.score-box {
+  min-width: 110px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: #f3f4f6;
   text-align: center;
 }
 
-.title-area h1 {
-  font-size: 36px;
-  margin-bottom: 10px;
+.score-box span {
+  display: block;
+  font-size: 14px;
+  color: #6b7280;
 }
 
-.title-area p {
-  margin-bottom: 20px;
-  color: #555;
+.score-box strong {
+  display: block;
+  font-size: 34px;
+  color: #2563eb;
 }
 
-.score-board {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-bottom: 14px;
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.game-container {
+.game-area {
   position: relative;
-  width: 100%;
   height: 360px;
   overflow: hidden;
-  border: 4px solid #222;
-  border-radius: 18px;
-  background: linear-gradient(#8fd3ff 0%, #dff5ff 70%, #79c267 70%, #4d9a3f 100%);
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  background: linear-gradient(#93c5fd, #bfdbfe 60%, #86efac 60%, #22c55e);
+  border: 4px solid #1f2937;
   cursor: pointer;
+}
+
+.ground-line {
+  position: absolute;
+  left: 0;
+  bottom: 86px;
+  width: 100%;
+  height: 5px;
+  background: #14532d;
 }
 
 .player {
   position: absolute;
-  left: 80px;
-  bottom: 72px;
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: #ffb703;
-  border: 4px solid #222;
-  z-index: 3;
+  left: 90px;
+  bottom: 90px;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: #f97316;
+  border: 4px solid #1f2937;
+  transition: transform 0.05s linear;
 }
 
 .player::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 12px;
-  right: 9px;
+  right: 10px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #222;
+  background: #111827;
 }
 
 .player.jump {
-  animation: jump 620ms ease-out;
+  animation: jump 0.62s ease-out;
 }
 
 @keyframes jump {
-  0% {
-    bottom: 72px;
-  }
-  45% {
-    bottom: 190px;
-  }
-  100% {
-    bottom: 72px;
-  }
+  0% { bottom: 90px; }
+  45% { bottom: 210px; }
+  60% { bottom: 210px; }
+  100% { bottom: 90px; }
 }
 
 .obstacle {
   position: absolute;
-  right: -70px;
-  bottom: 72px;
+  right: -60px;
+  bottom: 90px;
   width: 42px;
   height: 58px;
-  border-radius: 8px 8px 0 0;
-  background: #e63946;
-  border: 4px solid #222;
-  z-index: 2;
+  border-radius: 10px 10px 4px 4px;
+  background: #7c2d12;
+  border: 4px solid #1f2937;
 }
 
 .obstacle.move {
@@ -106,108 +133,125 @@ body {
 }
 
 @keyframes obstacleMove {
-  from {
-    right: -70px;
-  }
-  to {
-    right: 100%;
-  }
-}
-
-.ground {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 64px;
-  height: 8px;
-  background: #222;
-  z-index: 1;
+  from { right: -60px; }
+  to { right: 100%; }
 }
 
 .cloud {
   position: absolute;
   width: 90px;
-  height: 34px;
-  border-radius: 30px;
-  background: rgba(255, 255, 255, 0.9);
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .cloud::before,
 .cloud::after {
-  content: "";
+  content: '';
   position: absolute;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
 }
 
 .cloud::before {
-  left: 16px;
+  width: 42px;
+  height: 42px;
+  left: 14px;
   top: -18px;
-  width: 34px;
-  height: 34px;
 }
 
 .cloud::after {
+  width: 34px;
+  height: 34px;
   right: 14px;
   top: -12px;
-  width: 28px;
-  height: 28px;
 }
 
 .cloud-one {
-  top: 54px;
-  left: 70px;
+  top: 70px;
+  left: 90px;
 }
 
 .cloud-two {
-  top: 98px;
+  top: 115px;
   right: 120px;
 }
 
-.message-box {
+.message {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.78);
-  z-index: 10;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.62);
+  text-align: center;
 }
 
-.message-box.hidden {
+.message.hide {
   display: none;
 }
 
-.message-box h2 {
-  font-size: 34px;
+.message strong {
+  font-size: 38px;
 }
 
-.message-box p {
+.message span {
   font-size: 18px;
+  color: #374151;
 }
 
-.control-guide {
-  margin-top: 20px;
+.control-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
 }
 
 button {
-  padding: 13px 24px;
   border: none;
   border-radius: 999px;
-  background: #222;
-  color: white;
+  padding: 13px 22px;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 700;
+  color: #ffffff;
+  background: #2563eb;
   cursor: pointer;
 }
 
 button:hover {
-  background: #444;
+  filter: brightness(0.95);
 }
 
-.control-guide p {
-  margin-top: 12px;
-  color: #555;
+#soundBtn {
+  background: #16a34a;
+}
+
+#soundBtn.sound-off {
+  background: #6b7280;
+}
+
+.control-area p {
+  color: #6b7280;
+}
+
+@media (max-width: 640px) {
+  .top-area {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  .game-area {
+    height: 310px;
+  }
+
+  .player {
+    left: 55px;
+  }
 }
