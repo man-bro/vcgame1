@@ -16,6 +16,7 @@ body {
 .game-wrapper {
   width: min(92vw, 760px);
   text-align: center;
+  padding: 28px 0;
 }
 
 h1 {
@@ -104,9 +105,10 @@ h1 {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.78);
-  font-size: 24px;
+  gap: 10px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.82);
+  font-size: 22px;
 }
 
 .message.hide {
@@ -115,6 +117,98 @@ h1 {
 
 .message strong {
   font-size: 36px;
+}
+
+.nickname-form {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.nickname-form input {
+  width: min(260px, 70vw);
+  padding: 12px 14px;
+  border: 2px solid #222;
+  border-radius: 999px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.nickname-form button,
+.clear-ranking-btn {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 999px;
+  background: #222;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.nickname-form button:hover,
+.clear-ranking-btn:hover {
+  background: #444;
+}
+
+.ranking-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 3px solid #222;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+  text-align: left;
+}
+
+.ranking-panel h2 {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 24px;
+}
+
+.ranking-list {
+  min-height: 42px;
+  margin: 0;
+  padding-left: 28px;
+}
+
+.ranking-list li {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
+}
+
+.ranking-empty {
+  text-align: center;
+  color: #666;
+  list-style: none;
+}
+
+.log-name {
+  font-weight: bold;
+}
+
+.log-result {
+  display: inline-block;
+  min-width: 44px;
+  margin-left: 8px;
+  font-weight: bold;
+}
+
+.log-info {
+  color: #555;
+  font-size: 14px;
+}
+
+.clear-ranking-btn {
+  display: block;
+  margin: 14px auto 0;
+  background: #666;
+  font-size: 14px;
 }
 
 .start-btn {

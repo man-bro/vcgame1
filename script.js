@@ -5,16 +5,21 @@ const startBtn = document.getElementById('startBtn');
 const message = document.getElementById('message');
 const scoreText = document.getElementById('score');
 const targetScoreText = document.getElementById('targetScore');
+const rankingList = document.getElementById('rankingList');
+const clearRankingBtn = document.getElementById('clearRankingBtn');
 
 const targetScore = 10;
+const rankingStorageKey = 'jumpTimingGameRanking';
 let score = 0;
 let isPlaying = false;
 let isJumping = false;
 let hasScoredThisObstacle = false;
 let collisionTimer = null;
 let audioContext = null;
+let lastGameResult = null;
 
 targetScoreText.textContent = targetScore;
+renderRanking();
 
 function getAudioContext() {
   if (!audioContext) {
@@ -79,6 +84,7 @@ function startGame() {
   isPlaying = true;
   isJumping = false;
   hasScoredThisObstacle = false;
+  lastGameResult = null;
 
   scoreText.textContent = score;
   startBtn.textContent = '다시 시작';
@@ -96,18 +102,120 @@ function startGame() {
 
 function endGame(result) {
   isPlaying = false;
+  lastGameResult = result;
   clearInterval(collisionTimer);
   obstacle.classList.remove('move');
 
   if (result === 'win') {
     playWinSound();
-    message.innerHTML = '<strong>승리!</strong><span>목표 점수를 달성했습니다.</span>';
+    showEndingMessage('승리!', '목표 점수를 달성했습니다.');
   } else {
     playLoseSound();
-    message.innerHTML = '<strong>패배!</strong><span>장애물에 부딪혔습니다.</span>';
+    showEndingMessage('패배!', '장애물에 부딪혔습니다.');
   }
 
   message.classList.remove('hide');
+}
+
+function showEndingMessage(title, subtitle) {
+  message.innerHTML = `
+    <strong>${title}</strong>
+    <span>${subtitle}</span>
+    <span>닉네임을 남기면 플레이 로그에 저장됩니다.</span>
+    <form id="nicknameForm" class="nickname-form">
+      <input id="nicknameInput" type="text" maxlength="10" placeholder="닉네임 입력" autocomplete="off" />
+      <button type="submit">기록 저장</button>
+    </form>
+  `;
+
+  const nicknameForm = document.getElementById('nicknameForm');
+  const nicknameInput = document.getElementById('nicknameInput');
+
+  nicknameInput.focus();
+  nicknameForm.addEventListener('submit', saveCurrentPlayLog);
+}
+
+function saveCurrentPlayLog(event) {
+  event.preventDefault();
+
+  const nicknameInput = document.getElementById('nicknameInput');
+  const nickname = nicknameInput.value.trim() || '이름없음';
+
+  const playLog = {
+    nickname,
+    score,
+    result: lastGameResult === 'win' ? '승리' : '패배',
+    playedAt: new Date().toLocaleString('ko-KR')
+  };
+
+  const ranking = getRanking();
+  ranking.unshift(playLog);
+
+  const topTenRanking = ranking
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(b.playedAt) - new Date(a.playedAt);
+    })
+    .slice(0, 10);
+
+  localStorage.setItem(rankingStorageKey, JSON.stringify(topTenRanking));
+  renderRanking();
+
+  message.innerHTML = `
+    <strong>기록 저장 완료!</strong>
+    <span>${nickname}님의 기록이 플레이 로그에 저장되었습니다.</span>
+  `;
+}
+
+function getRanking() {
+  const savedRanking = localStorage.getItem(rankingStorageKey);
+
+  if (!savedRanking) return [];
+
+  try {
+    return JSON.parse(savedRanking);
+  } catch (error) {
+    return [];
+  }
+}
+
+function renderRanking() {
+  const ranking = getRanking();
+
+  if (ranking.length === 0) {
+    rankingList.innerHTML = '<li class="ranking-empty">아직 저장된 플레이 로그가 없습니다.</li>';
+    return;
+  }
+
+  rankingList.innerHTML = ranking
+    .map((log) => {
+      return `
+        <li>
+          <span class="log-name">${escapeHTML(log.nickname)}</span>
+          <span class="log-result">${log.result}</span>
+          <span class="log-info">점수 ${log.score}점 · ${log.playedAt}</span>
+        </li>
+      `;
+    })
+    .join('');
+}
+
+function escapeHTML(text) {
+  return String(text)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function clearRanking() {
+  const isConfirmed = confirm('저장된 플레이 로그를 모두 삭제할까요?');
+
+  if (!isConfirmed) return;
+
+  localStorage.removeItem(rankingStorageKey);
+  renderRanking();
 }
 
 function jump() {
@@ -159,6 +267,7 @@ function checkGameState() {
 
 startBtn.addEventListener('click', startGame);
 gameArea.addEventListener('click', jump);
+clearRankingBtn.addEventListener('click', clearRanking);
 
 document.addEventListener('keydown', (event) => {
   if (event.code === 'Space') {
