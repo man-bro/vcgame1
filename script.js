@@ -5,12 +5,49 @@ const startBtn = document.getElementById('startBtn');
 const message = document.getElementById('message');
 const scoreText = document.getElementById('score');
 const targetScoreText = document.getElementById('targetScore');
+const levelText = document.getElementById('level');
+const levelNameText = document.getElementById('levelName');
+const levelDescriptionText = document.getElementById('levelDescription');
 const rankingList = document.getElementById('rankingList');
 const clearRankingBtn = document.getElementById('clearRankingBtn');
 
-const targetScore = 10;
+const levels = [
+  {
+    level: 1,
+    name: '1단계: 연습',
+    description: '기본 속도로 장애물이 등장합니다.',
+    startScore: 0,
+    nextScore: 5,
+    obstacleDuration: 1.65,
+    obstacleWidth: 42,
+    obstacleHeight: 54
+  },
+  {
+    level: 2,
+    name: '2단계: 집중',
+    description: '장애물이 더 빠르고 조금 커집니다.',
+    startScore: 5,
+    nextScore: 10,
+    obstacleDuration: 1.25,
+    obstacleWidth: 50,
+    obstacleHeight: 62
+  },
+  {
+    level: 3,
+    name: '3단계: 도전',
+    description: '가장 빠른 속도의 장애물을 피해야 합니다.',
+    startScore: 10,
+    nextScore: 15,
+    obstacleDuration: 0.95,
+    obstacleWidth: 58,
+    obstacleHeight: 70
+  }
+];
+
+const targetScore = levels[levels.length - 1].nextScore;
 const rankingStorageKey = 'jumpTimingGameRanking';
 let score = 0;
+let currentLevelIndex = 0;
 let isPlaying = false;
 let isJumping = false;
 let hasScoredThisObstacle = false;
@@ -18,7 +55,9 @@ let collisionTimer = null;
 let audioContext = null;
 let lastGameResult = null;
 
+scoreText.textContent = score;
 targetScoreText.textContent = targetScore;
+applyLevel(0);
 renderRanking();
 
 function getAudioContext() {
@@ -79,8 +118,18 @@ function playLoseSound() {
   playTone(110, now + 0.35, 0.35, 'sawtooth', 0.12);
 }
 
+function playLevelUpSound() {
+  const ctx = getAudioContext();
+  const now = ctx.currentTime;
+
+  playTone(440, now, 0.08, 'triangle', 0.12);
+  playTone(660, now + 0.08, 0.08, 'triangle', 0.12);
+  playTone(880, now + 0.16, 0.12, 'triangle', 0.14);
+}
+
 function startGame() {
   score = 0;
+  currentLevelIndex = 0;
   isPlaying = true;
   isJumping = false;
   hasScoredThisObstacle = false;
@@ -90,14 +139,71 @@ function startGame() {
   startBtn.textContent = '다시 시작';
   message.classList.add('hide');
 
-  obstacle.classList.remove('move');
-  void obstacle.offsetWidth;
-  obstacle.classList.add('move');
+  applyLevel(currentLevelIndex);
+  restartObstacleAnimation();
 
   clearInterval(collisionTimer);
   collisionTimer = setInterval(checkGameState, 20);
 
   getAudioContext();
+}
+
+function applyLevel(levelIndex) {
+  currentLevelIndex = levelIndex;
+  const currentLevel = levels[currentLevelIndex];
+
+  levelText.textContent = currentLevel.level;
+  levelNameText.textContent = currentLevel.name;
+  levelDescriptionText.textContent = currentLevel.description;
+
+  obstacle.style.animationDuration = `${currentLevel.obstacleDuration}s`;
+  obstacle.style.width = `${currentLevel.obstacleWidth}px`;
+  obstacle.style.height = `${currentLevel.obstacleHeight}px`;
+}
+
+function restartObstacleAnimation() {
+  obstacle.classList.remove('move');
+  void obstacle.offsetWidth;
+  obstacle.classList.add('move');
+}
+
+function checkLevelUp() {
+  const nextLevelIndex = currentLevelIndex + 1;
+
+  if (nextLevelIndex >= levels.length) return;
+
+  const nextLevel = levels[nextLevelIndex];
+
+  if (score >= nextLevel.startScore) {
+    applyLevel(nextLevelIndex);
+    playLevelUpSound();
+    showLevelUpNotice(nextLevel);
+    restartObstacleAnimation();
+  }
+}
+
+function showLevelUpNotice(level) {
+  const notice = document.createElement('div');
+  notice.className = 'level-up-text';
+  notice.textContent = `${level.name} 진입!`;
+
+  gameArea.appendChild(notice);
+
+  Object.assign(notice.style, {
+    position: 'absolute',
+    top: '24px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    padding: '10px 18px',
+    borderRadius: '999px',
+    background: 'rgba(255, 255, 255, 0.88)',
+    border: '2px solid #222',
+    zIndex: '5'
+  });
+
+  setTimeout(() => {
+    notice.remove();
+  }, 1100);
 }
 
 function endGame(result) {
@@ -108,10 +214,10 @@ function endGame(result) {
 
   if (result === 'win') {
     playWinSound();
-    showEndingMessage('승리!', '목표 점수를 달성했습니다.');
+    showEndingMessage('승리!', '3단계까지 모두 통과했습니다.');
   } else {
     playLoseSound();
-    showEndingMessage('패배!', '장애물에 부딪혔습니다.');
+    showEndingMessage('패배!', `${levels[currentLevelIndex].level}단계에서 장애물에 부딪혔습니다.`);
   }
 
   message.classList.remove('hide');
@@ -144,6 +250,7 @@ function saveCurrentPlayLog(event) {
   const playLog = {
     nickname,
     score,
+    level: levels[currentLevelIndex].level,
     result: lastGameResult === 'win' ? '승리' : '패배',
     playedAt: new Date().toLocaleString('ko-KR')
   };
@@ -163,7 +270,7 @@ function saveCurrentPlayLog(event) {
 
   message.innerHTML = `
     <strong>기록 저장 완료!</strong>
-    <span>${nickname}님의 기록이 플레이 로그에 저장되었습니다.</span>
+    <span>${escapeHTML(nickname)}님의 기록이 플레이 로그에 저장되었습니다.</span>
   `;
 }
 
@@ -189,11 +296,13 @@ function renderRanking() {
 
   rankingList.innerHTML = ranking
     .map((log) => {
+      const level = log.level || (log.result === '승리' ? 3 : 1);
+
       return `
         <li>
           <span class="log-name">${escapeHTML(log.nickname)}</span>
           <span class="log-result">${log.result}</span>
-          <span class="log-info">점수 ${log.score}점 · ${log.playedAt}</span>
+          <span class="log-info">점수 ${log.score}점 · ${level}단계 · ${log.playedAt}</span>
         </li>
       `;
     })
@@ -257,7 +366,10 @@ function checkGameState() {
 
     if (score >= targetScore) {
       endGame('win');
+      return;
     }
+
+    checkLevelUp();
   }
 
   if (obstacleRect.left > playerRect.right) {

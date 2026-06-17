@@ -32,10 +32,31 @@ h1 {
 .score-board {
   display: flex;
   justify-content: center;
-  gap: 24px;
-  margin: 20px 0;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin: 20px 0 10px;
   font-size: 22px;
   font-weight: bold;
+}
+
+.level-info {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 18px;
+  border: 3px solid #222;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  font-weight: bold;
+}
+
+#levelDescription {
+  color: #555;
+  font-size: 15px;
+  font-weight: normal;
 }
 
 .game-area {
@@ -72,7 +93,7 @@ h1 {
 
 .obstacle {
   position: absolute;
-  right: -50px;
+  right: -70px;
   bottom: 70px;
   width: 42px;
   height: 54px;
@@ -81,11 +102,13 @@ h1 {
 }
 
 .obstacle.move {
-  animation: obstacleMove 1.55s linear infinite;
+  animation-name: obstacleMove;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 @keyframes obstacleMove {
-  from { right: -50px; }
+  from { right: -70px; }
   to { right: 100%; }
 }
 
@@ -117,6 +140,11 @@ h1 {
 
 .message strong {
   font-size: 36px;
+}
+
+.level-up-text {
+  font-weight: bold;
+  color: #222;
 }
 
 .nickname-form {
