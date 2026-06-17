@@ -56,6 +56,14 @@ let coinCount = 0;
 let currentLevelIndex = 0;
 let isPlaying = false;
 let isJumping = false;
+let jumpCount = 0;
+let playerBottom = 70;
+let jumpVelocity = 0;
+const groundBottom = 70;
+const gravity = 1.15;
+const firstJumpPower = 18;
+const secondJumpPower = 15;
+const maxJumpCount = 2;
 let hasScoredThisObstacle = false;
 let hasCollectedThisCoin = false;
 let collisionTimer = null;
@@ -149,6 +157,11 @@ function startGame() {
   currentLevelIndex = 0;
   isPlaying = true;
   isJumping = false;
+  jumpCount = 0;
+  playerBottom = groundBottom;
+  jumpVelocity = 0;
+  player.style.bottom = `${groundBottom}px`;
+  player.classList.remove('jump', 'double-jump');
   hasScoredThisObstacle = false;
   hasCollectedThisCoin = false;
   lastGameResult = null;
@@ -370,20 +383,42 @@ function clearRanking() {
 }
 
 function jump() {
-  if (!isPlaying || isJumping) return;
+  if (!isPlaying || jumpCount >= maxJumpCount) return;
 
+  jumpCount += 1;
   isJumping = true;
-  player.classList.add('jump');
-  playJumpSound();
+  jumpVelocity = jumpCount === 1 ? firstJumpPower : secondJumpPower;
 
-  setTimeout(() => {
-    player.classList.remove('jump');
+  player.classList.remove('jump', 'double-jump');
+  void player.offsetWidth;
+  player.classList.add(jumpCount === 1 ? 'jump' : 'double-jump');
+
+  playJumpSound();
+}
+
+function updatePlayerPhysics() {
+  if (!isPlaying) return;
+
+  if (jumpCount === 0 && playerBottom === groundBottom) return;
+
+  playerBottom += jumpVelocity;
+  jumpVelocity -= gravity;
+
+  if (playerBottom <= groundBottom) {
+    playerBottom = groundBottom;
+    jumpVelocity = 0;
+    jumpCount = 0;
     isJumping = false;
-  }, 620);
+    player.classList.remove('jump', 'double-jump');
+  }
+
+  player.style.bottom = `${playerBottom}px`;
 }
 
 function checkGameState() {
   if (!isPlaying) return;
+
+  updatePlayerPhysics();
 
   const playerRect = player.getBoundingClientRect();
   const obstacleRect = obstacle.getBoundingClientRect();
