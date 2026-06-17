@@ -260,12 +260,25 @@ function setObstacleType(type) {
 }
 
 function restartObstacleAnimation() {
+  if (!isPlaying) return;
+
   hasScoredThisObstacle = false;
+
+  // CSS 애니메이션을 확실하게 처음 위치부터 다시 시작합니다.
+  // 일부 브라우저에서는 animation-fill-mode: forwards 상태가 남아서
+  // 다음 장애물이 생성되지 않은 것처럼 보일 수 있으므로 animation 속성을 직접 초기화합니다.
   obstacle.classList.remove('move');
+  obstacle.style.animation = 'none';
+
   setRandomObstacleType();
+
+  // 강제 리플로우로 이전 애니메이션 상태를 완전히 비웁니다.
   void obstacle.offsetWidth;
+
+  obstacle.style.animation = '';
   obstacle.classList.add('move');
 }
+
 
 function restartCoinAnimation() {
   if (!isPlaying) return;
@@ -549,11 +562,16 @@ function checkGameState() {
   // 장애물이 화면 밖으로 완전히 나가면 다음 장애물을 새로 생성합니다.
   // 기존에는 CSS animationiteration에 의존해서 일부 환경에서
   // 단계별 첫 번째 장애물만 계속 보이는 문제가 생길 수 있었습니다.
-  if (obstacleRect.right < gameAreaRect.left) {
+  if (obstacleRect.right <= gameAreaRect.left + 2) {
     restartObstacleAnimation();
   }
 }
 
+
+obstacle.addEventListener('animationend', () => {
+  if (!isPlaying) return;
+  restartObstacleAnimation();
+});
 
 startBtn.addEventListener('click', startGame);
 gameArea.addEventListener('click', jump);
