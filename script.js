@@ -19,29 +19,29 @@ const levels = [
     name: '1단계: 연습',
     description: '낮은 장애물 위주로 등장합니다.',
     startScore: 0,
-    nextScore: 8,
-    obstacleDuration: 1.65,
-    coinDuration: 2.15,
+    nextScore: 12,
+    obstacleDuration: 2.25,
+    coinDuration: 2.7,
     obstacleTypes: ['low', 'low', 'wide']
   },
   {
     level: 2,
     name: '2단계: 집중',
     description: '높은 장애물과 빠른 장애물이 추가됩니다.',
-    startScore: 8,
-    nextScore: 16,
-    obstacleDuration: 1.25,
-    coinDuration: 1.75,
+    startScore: 12,
+    nextScore: 24,
+    obstacleDuration: 1.85,
+    coinDuration: 2.25,
     obstacleTypes: ['low', 'wide', 'tall', 'fast']
   },
   {
     level: 3,
     name: '3단계: 도전',
     description: '모든 장애물이 더 빠르게 랜덤 등장합니다.',
-    startScore: 16,
-    nextScore: 25,
-    obstacleDuration: 0.95,
-    coinDuration: 1.35,
+    startScore: 24,
+    nextScore: 38,
+    obstacleDuration: 1.45,
+    coinDuration: 1.85,
     obstacleTypes: ['low', 'wide', 'tall', 'fast', 'fast']
   }
 ];
@@ -268,15 +268,22 @@ function restartObstacleAnimation() {
   // 일부 브라우저에서는 animation-fill-mode: forwards 상태가 남아서
   // 다음 장애물이 생성되지 않은 것처럼 보일 수 있으므로 animation 속성을 직접 초기화합니다.
   obstacle.classList.remove('move');
-  obstacle.style.animation = 'none';
 
+  // animation shorthand를 사용하면 animation-duration까지 0초로 초기화될 수 있어서
+  // 단계가 너무 빨리 끝나는 문제가 생길 수 있습니다.
+  // 그래서 class만 제거/추가해서 애니메이션을 재시작합니다.
   setRandomObstacleType();
+
+  // 화면 오른쪽 시작 위치로 확실히 돌려놓습니다.
+  obstacle.style.right = '-90px';
 
   // 강제 리플로우로 이전 애니메이션 상태를 완전히 비웁니다.
   void obstacle.offsetWidth;
 
-  obstacle.style.animation = '';
   obstacle.classList.add('move');
+
+  // inline right 값이 다음 애니메이션을 방해하지 않도록 제거합니다.
+  obstacle.style.right = '';
 }
 
 
@@ -286,8 +293,10 @@ function restartCoinAnimation() {
   hasCollectedThisCoin = false;
   coin.classList.remove('move', 'collected');
   coin.style.bottom = `${getRandomCoinBottom()}px`;
+  coin.style.right = '-60px';
   void coin.offsetWidth;
   coin.classList.add('move');
+  coin.style.right = '';
 }
 
 function getRandomCoinBottom() {
@@ -570,7 +579,16 @@ function checkGameState() {
 
 obstacle.addEventListener('animationend', () => {
   if (!isPlaying) return;
-  restartObstacleAnimation();
+
+  // CSS 애니메이션이 정상 종료되었을 때만 다음 장애물을 생성합니다.
+  // animation-duration이 0초로 처리되는 상황을 방지하기 위해
+  // 실제 화면 밖에 있는지도 함께 확인합니다.
+  const obstacleRect = obstacle.getBoundingClientRect();
+  const gameAreaRect = gameArea.getBoundingClientRect();
+
+  if (obstacleRect.right <= gameAreaRect.left + 5) {
+    restartObstacleAnimation();
+  }
 });
 
 startBtn.addEventListener('click', startGame);
