@@ -103,7 +103,8 @@ h1 {
 .obstacle.move {
   animation-name: obstacleMove;
   animation-timing-function: linear;
-  animation-iteration-count: infinite;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
 }
 
 @keyframes obstacleMove {

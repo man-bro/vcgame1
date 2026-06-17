@@ -230,7 +230,17 @@ function applyLevel(levelIndex) {
 function setRandomObstacleType() {
   const currentLevel = levels[currentLevelIndex];
   const candidates = currentLevel.obstacleTypes;
-  const randomType = candidates[Math.floor(Math.random() * candidates.length)];
+  let randomType = candidates[Math.floor(Math.random() * candidates.length)];
+
+  // 같은 장애물만 반복해서 나오는 느낌을 줄이기 위해
+  // 가능한 경우 직전 장애물과 다른 타입을 선택합니다.
+  const uniqueCandidates = [...new Set(candidates)];
+  if (uniqueCandidates.length > 1) {
+    while (randomType === currentObstacleType) {
+      randomType = candidates[Math.floor(Math.random() * candidates.length)];
+    }
+  }
+
   setObstacleType(randomType);
 }
 
@@ -536,16 +546,14 @@ function checkGameState() {
     checkLevelUp();
   }
 
-  if (obstacleRect.left > playerRect.right) {
-    hasScoredThisObstacle = false;
+  // 장애물이 화면 밖으로 완전히 나가면 다음 장애물을 새로 생성합니다.
+  // 기존에는 CSS animationiteration에 의존해서 일부 환경에서
+  // 단계별 첫 번째 장애물만 계속 보이는 문제가 생길 수 있었습니다.
+  if (obstacleRect.right < gameAreaRect.left) {
+    restartObstacleAnimation();
   }
 }
 
-obstacle.addEventListener('animationiteration', () => {
-  if (!isPlaying) return;
-  hasScoredThisObstacle = false;
-  setRandomObstacleType();
-});
 
 startBtn.addEventListener('click', startGame);
 gameArea.addEventListener('click', jump);
