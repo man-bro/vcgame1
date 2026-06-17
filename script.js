@@ -1,20 +1,22 @@
+const gameArea = document.getElementById('gameArea');
 const player = document.getElementById('player');
 const obstacle = document.getElementById('obstacle');
-const scoreText = document.getElementById('score');
-const message = document.getElementById('message');
 const startBtn = document.getElementById('startBtn');
-const soundBtn = document.getElementById('soundBtn');
-const gameArea = document.getElementById('gameArea');
+const message = document.getElementById('message');
+const scoreText = document.getElementById('score');
+const targetScoreText = document.getElementById('targetScore');
 
+const targetScore = 10;
+let score = 0;
 let isPlaying = false;
 let isJumping = false;
-let score = 0;
-let scoreTimer = null;
+let hasScoredThisObstacle = false;
 let collisionTimer = null;
-let soundEnabled = true;
 let audioContext = null;
 
-function prepareAudio() {
+targetScoreText.textContent = targetScore;
+
+function getAudioContext() {
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
@@ -22,79 +24,94 @@ function prepareAudio() {
   if (audioContext.state === 'suspended') {
     audioContext.resume();
   }
+
+  return audioContext;
+}
+
+function playTone(frequency, startTime, duration, type = 'sine', volume = 0.18) {
+  const ctx = getAudioContext();
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startTime);
+
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(volume, startTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+
+  oscillator.start(startTime);
+  oscillator.stop(startTime + duration);
 }
 
 function playJumpSound() {
-  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  const now = ctx.currentTime;
 
-  prepareAudio();
+  playTone(520, now, 0.08, 'square', 0.12);
+  playTone(780, now + 0.06, 0.1, 'square', 0.1);
+}
 
-  const now = audioContext.currentTime;
-  const oscillator = audioContext.createOscillator();
-  const gain = audioContext.createGain();
+function playWinSound() {
+  const ctx = getAudioContext();
+  const now = ctx.currentTime;
 
-  oscillator.type = 'square';
-  oscillator.frequency.setValueAtTime(430, now);
-  oscillator.frequency.exponentialRampToValueAtTime(760, now + 0.08);
-  oscillator.frequency.exponentialRampToValueAtTime(520, now + 0.16);
+  playTone(523.25, now, 0.12, 'sine', 0.16);
+  playTone(659.25, now + 0.12, 0.12, 'sine', 0.16);
+  playTone(783.99, now + 0.24, 0.15, 'sine', 0.18);
+  playTone(1046.5, now + 0.39, 0.28, 'triangle', 0.2);
+}
 
-  gain.gain.setValueAtTime(0.001, now);
-  gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+function playLoseSound() {
+  const ctx = getAudioContext();
+  const now = ctx.currentTime;
 
-  oscillator.connect(gain);
-  gain.connect(audioContext.destination);
-
-  oscillator.start(now);
-  oscillator.stop(now + 0.2);
+  playTone(220, now, 0.18, 'sawtooth', 0.16);
+  playTone(164.81, now + 0.16, 0.22, 'sawtooth', 0.14);
+  playTone(110, now + 0.35, 0.35, 'sawtooth', 0.12);
 }
 
 function startGame() {
-  prepareAudio();
-
+  score = 0;
   isPlaying = true;
   isJumping = false;
-  score = 0;
-  scoreText.textContent = score;
+  hasScoredThisObstacle = false;
 
+  scoreText.textContent = score;
+  startBtn.textContent = '다시 시작';
   message.classList.add('hide');
+
   obstacle.classList.remove('move');
   void obstacle.offsetWidth;
   obstacle.classList.add('move');
 
-  clearInterval(scoreTimer);
   clearInterval(collisionTimer);
+  collisionTimer = setInterval(checkGameState, 20);
 
-  scoreTimer = setInterval(() => {
-    score += 1;
-    scoreText.textContent = score;
-  }, 200);
-
-  collisionTimer = setInterval(checkCollision, 10);
+  getAudioContext();
 }
 
-function endGame() {
+function endGame(result) {
   isPlaying = false;
+  clearInterval(collisionTimer);
   obstacle.classList.remove('move');
 
-  clearInterval(scoreTimer);
-  clearInterval(collisionTimer);
+  if (result === 'win') {
+    playWinSound();
+    message.innerHTML = '<strong>승리!</strong><span>목표 점수를 달성했습니다.</span>';
+  } else {
+    playLoseSound();
+    message.innerHTML = '<strong>패배!</strong><span>장애물에 부딪혔습니다.</span>';
+  }
 
-  message.innerHTML = `
-    <strong>게임 오버</strong>
-    <span>최종 점수: ${score}</span>
-    <span>다시 시작하려면 버튼 또는 스페이스바를 누르세요</span>
-  `;
   message.classList.remove('hide');
 }
 
 function jump() {
-  if (!isPlaying) {
-    startGame();
-    return;
-  }
-
-  if (isJumping) return;
+  if (!isPlaying || isJumping) return;
 
   isJumping = true;
   player.classList.add('jump');
@@ -106,7 +123,9 @@ function jump() {
   }, 620);
 }
 
-function checkCollision() {
+function checkGameState() {
+  if (!isPlaying) return;
+
   const playerRect = player.getBoundingClientRect();
   const obstacleRect = obstacle.getBoundingClientRect();
 
@@ -117,27 +136,28 @@ function checkCollision() {
     playerRect.bottom > obstacleRect.top;
 
   if (isColliding) {
-    endGame();
+    endGame('lose');
+    return;
   }
-}
 
-function toggleSound() {
-  soundEnabled = !soundEnabled;
+  const obstaclePassedPlayer = obstacleRect.right < playerRect.left;
 
-  if (soundEnabled) {
-    soundBtn.textContent = '효과음 ON';
-    soundBtn.classList.remove('sound-off');
-    soundBtn.classList.add('sound-on');
-    prepareAudio();
-  } else {
-    soundBtn.textContent = '효과음 OFF';
-    soundBtn.classList.remove('sound-on');
-    soundBtn.classList.add('sound-off');
+  if (obstaclePassedPlayer && !hasScoredThisObstacle) {
+    score += 1;
+    scoreText.textContent = score;
+    hasScoredThisObstacle = true;
+
+    if (score >= targetScore) {
+      endGame('win');
+    }
+  }
+
+  if (obstacleRect.left > playerRect.right) {
+    hasScoredThisObstacle = false;
   }
 }
 
 startBtn.addEventListener('click', startGame);
-soundBtn.addEventListener('click', toggleSound);
 gameArea.addEventListener('click', jump);
 
 document.addEventListener('keydown', (event) => {

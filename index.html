@@ -8,36 +8,26 @@
 </head>
 <body>
   <main class="game-wrapper">
-    <section class="game-card">
-      <div class="top-area">
-        <div>
-          <h1>점프 타이밍 게임</h1>
-          <p>장애물이 다가오면 타이밍에 맞춰 점프하세요!</p>
-        </div>
-        <div class="score-box">
-          <span>점수</span>
-          <strong id="score">0</strong>
-        </div>
-      </div>
+    <h1>점프 타이밍 게임</h1>
+    <p class="description">스페이스바 또는 화면 클릭으로 점프해서 장애물을 피하세요!</p>
 
-      <div class="game-area" id="gameArea">
-        <div class="cloud cloud-one"></div>
-        <div class="cloud cloud-two"></div>
-        <div class="ground-line"></div>
-        <div class="player" id="player"></div>
-        <div class="obstacle" id="obstacle"></div>
-        <div class="message" id="message">
-          <strong>게임 시작</strong>
-          <span>스페이스바 또는 화면 클릭</span>
-        </div>
-      </div>
+    <section class="score-board">
+      <div>점수: <span id="score">0</span></div>
+      <div>목표: <span id="targetScore">10</span></div>
+    </section>
 
-      <div class="control-area">
-        <button id="startBtn">게임 시작</button>
-        <button id="soundBtn" class="sound-on">효과음 ON</button>
-        <p>조작: 스페이스바 / 마우스 클릭 / 터치</p>
+    <section id="gameArea" class="game-area">
+      <div id="player" class="player"></div>
+      <div id="obstacle" class="obstacle"></div>
+      <div class="ground"></div>
+      <div id="message" class="message">
+        <strong>게임 시작</strong>
+        <span>시작 버튼을 누르세요</span>
       </div>
     </section>
+
+    <button id="startBtn" class="start-btn">게임 시작</button>
+    <p class="tip">조작: 스페이스바 / 마우스 클릭 / 터치</p>
   </main>
 
   <script src="script.js"></script>
