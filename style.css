@@ -258,3 +258,41 @@ h1 {
 .tip {
   color: #555;
 }
+
+.coin {
+  position: absolute;
+  right: -50px;
+  bottom: 145px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #ffd54a;
+  border: 3px solid #b8860b;
+  box-shadow: inset -4px -4px 0 rgba(0, 0, 0, 0.16), 0 0 10px rgba(255, 213, 74, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.coin::after {
+  content: '';
+  width: 8px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.coin.move {
+  animation-name: coinMove;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.coin.collected {
+  display: none;
+}
+
+@keyframes coinMove {
+  from { right: -50px; transform: rotate(0deg); }
+  to { right: 100%; transform: rotate(720deg); }
+}

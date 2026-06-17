@@ -1,9 +1,11 @@
 const gameArea = document.getElementById('gameArea');
 const player = document.getElementById('player');
 const obstacle = document.getElementById('obstacle');
+const coin = document.getElementById('coin');
 const startBtn = document.getElementById('startBtn');
 const message = document.getElementById('message');
 const scoreText = document.getElementById('score');
+const coinCountText = document.getElementById('coinCount');
 const targetScoreText = document.getElementById('targetScore');
 const levelText = document.getElementById('level');
 const levelNameText = document.getElementById('levelName');
@@ -15,30 +17,33 @@ const levels = [
   {
     level: 1,
     name: '1단계: 연습',
-    description: '기본 속도로 장애물이 등장합니다.',
+    description: '기본 속도로 장애물과 코인이 등장합니다.',
     startScore: 0,
-    nextScore: 5,
+    nextScore: 8,
     obstacleDuration: 1.65,
+    coinDuration: 2.15,
     obstacleWidth: 42,
     obstacleHeight: 54
   },
   {
     level: 2,
     name: '2단계: 집중',
-    description: '장애물이 더 빠르고 조금 커집니다.',
-    startScore: 5,
-    nextScore: 10,
+    description: '장애물과 코인이 더 빠르게 움직입니다.',
+    startScore: 8,
+    nextScore: 16,
     obstacleDuration: 1.25,
+    coinDuration: 1.75,
     obstacleWidth: 50,
     obstacleHeight: 62
   },
   {
     level: 3,
     name: '3단계: 도전',
-    description: '가장 빠른 속도의 장애물을 피해야 합니다.',
-    startScore: 10,
-    nextScore: 15,
+    description: '가장 빠른 속도로 장애물과 코인이 등장합니다.',
+    startScore: 16,
+    nextScore: 25,
     obstacleDuration: 0.95,
+    coinDuration: 1.35,
     obstacleWidth: 58,
     obstacleHeight: 70
   }
@@ -47,15 +52,18 @@ const levels = [
 const targetScore = levels[levels.length - 1].nextScore;
 const rankingStorageKey = 'jumpTimingGameRanking';
 let score = 0;
+let coinCount = 0;
 let currentLevelIndex = 0;
 let isPlaying = false;
 let isJumping = false;
 let hasScoredThisObstacle = false;
+let hasCollectedThisCoin = false;
 let collisionTimer = null;
 let audioContext = null;
 let lastGameResult = null;
 
 scoreText.textContent = score;
+coinCountText.textContent = coinCount;
 targetScoreText.textContent = targetScore;
 applyLevel(0);
 renderRanking();
@@ -99,6 +107,14 @@ function playJumpSound() {
   playTone(780, now + 0.06, 0.1, 'square', 0.1);
 }
 
+function playCoinSound() {
+  const ctx = getAudioContext();
+  const now = ctx.currentTime;
+
+  playTone(880, now, 0.07, 'triangle', 0.12);
+  playTone(1174.66, now + 0.06, 0.1, 'triangle', 0.12);
+}
+
 function playWinSound() {
   const ctx = getAudioContext();
   const now = ctx.currentTime;
@@ -129,18 +145,22 @@ function playLevelUpSound() {
 
 function startGame() {
   score = 0;
+  coinCount = 0;
   currentLevelIndex = 0;
   isPlaying = true;
   isJumping = false;
   hasScoredThisObstacle = false;
+  hasCollectedThisCoin = false;
   lastGameResult = null;
 
   scoreText.textContent = score;
+  coinCountText.textContent = coinCount;
   startBtn.textContent = '다시 시작';
   message.classList.add('hide');
 
   applyLevel(currentLevelIndex);
   restartObstacleAnimation();
+  restartCoinAnimation();
 
   clearInterval(collisionTimer);
   collisionTimer = setInterval(checkGameState, 20);
@@ -159,12 +179,28 @@ function applyLevel(levelIndex) {
   obstacle.style.animationDuration = `${currentLevel.obstacleDuration}s`;
   obstacle.style.width = `${currentLevel.obstacleWidth}px`;
   obstacle.style.height = `${currentLevel.obstacleHeight}px`;
+  coin.style.animationDuration = `${currentLevel.coinDuration}s`;
 }
 
 function restartObstacleAnimation() {
   obstacle.classList.remove('move');
   void obstacle.offsetWidth;
   obstacle.classList.add('move');
+}
+
+function restartCoinAnimation() {
+  if (!isPlaying) return;
+
+  hasCollectedThisCoin = false;
+  coin.classList.remove('move', 'collected');
+  coin.style.bottom = `${getRandomCoinBottom()}px`;
+  void coin.offsetWidth;
+  coin.classList.add('move');
+}
+
+function getRandomCoinBottom() {
+  const coinPositions = [130, 165, 200];
+  return coinPositions[Math.floor(Math.random() * coinPositions.length)];
 }
 
 function checkLevelUp() {
@@ -179,6 +215,7 @@ function checkLevelUp() {
     playLevelUpSound();
     showLevelUpNotice(nextLevel);
     restartObstacleAnimation();
+    restartCoinAnimation();
   }
 }
 
@@ -211,6 +248,7 @@ function endGame(result) {
   lastGameResult = result;
   clearInterval(collisionTimer);
   obstacle.classList.remove('move');
+  coin.classList.remove('move');
 
   if (result === 'win') {
     playWinSound();
@@ -227,6 +265,7 @@ function showEndingMessage(title, subtitle) {
   message.innerHTML = `
     <strong>${title}</strong>
     <span>${subtitle}</span>
+    <span>최종 점수 ${score}점 · 코인 ${coinCount}개</span>
     <span>닉네임을 남기면 플레이 로그에 저장됩니다.</span>
     <form id="nicknameForm" class="nickname-form">
       <input id="nicknameInput" type="text" maxlength="10" placeholder="닉네임 입력" autocomplete="off" />
@@ -250,6 +289,7 @@ function saveCurrentPlayLog(event) {
   const playLog = {
     nickname,
     score,
+    coinCount,
     level: levels[currentLevelIndex].level,
     result: lastGameResult === 'win' ? '승리' : '패배',
     playedAt: new Date().toLocaleString('ko-KR')
@@ -261,6 +301,7 @@ function saveCurrentPlayLog(event) {
   const topTenRanking = ranking
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
+      if ((b.coinCount || 0) !== (a.coinCount || 0)) return (b.coinCount || 0) - (a.coinCount || 0);
       return new Date(b.playedAt) - new Date(a.playedAt);
     })
     .slice(0, 10);
@@ -297,12 +338,13 @@ function renderRanking() {
   rankingList.innerHTML = ranking
     .map((log) => {
       const level = log.level || (log.result === '승리' ? 3 : 1);
+      const savedCoinCount = log.coinCount || 0;
 
       return `
         <li>
           <span class="log-name">${escapeHTML(log.nickname)}</span>
           <span class="log-result">${log.result}</span>
-          <span class="log-info">점수 ${log.score}점 · ${level}단계 · ${log.playedAt}</span>
+          <span class="log-info">점수 ${log.score}점 · 코인 ${savedCoinCount}개 · ${level}단계 · ${log.playedAt}</span>
         </li>
       `;
     })
@@ -345,16 +387,47 @@ function checkGameState() {
 
   const playerRect = player.getBoundingClientRect();
   const obstacleRect = obstacle.getBoundingClientRect();
+  const coinRect = coin.getBoundingClientRect();
+  const gameAreaRect = gameArea.getBoundingClientRect();
 
-  const isColliding =
+  const isCollidingWithObstacle =
     playerRect.left < obstacleRect.right &&
     playerRect.right > obstacleRect.left &&
     playerRect.top < obstacleRect.bottom &&
     playerRect.bottom > obstacleRect.top;
 
-  if (isColliding) {
+  if (isCollidingWithObstacle) {
     endGame('lose');
     return;
+  }
+
+  const isCoinVisible = !coin.classList.contains('collected');
+  const isCollectingCoin =
+    isCoinVisible &&
+    playerRect.left < coinRect.right &&
+    playerRect.right > coinRect.left &&
+    playerRect.top < coinRect.bottom &&
+    playerRect.bottom > coinRect.top;
+
+  if (isCollectingCoin && !hasCollectedThisCoin) {
+    coinCount += 1;
+    score += 2;
+    coinCountText.textContent = coinCount;
+    scoreText.textContent = score;
+    hasCollectedThisCoin = true;
+    coin.classList.add('collected');
+    playCoinSound();
+
+    if (score >= targetScore) {
+      endGame('win');
+      return;
+    }
+
+    checkLevelUp();
+  }
+
+  if (coinRect.right < gameAreaRect.left) {
+    restartCoinAnimation();
   }
 
   const obstaclePassedPlayer = obstacleRect.right < playerRect.left;
