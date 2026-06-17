@@ -17,43 +17,76 @@ const levels = [
   {
     level: 1,
     name: '1단계: 연습',
-    description: '기본 속도로 장애물과 코인이 등장합니다.',
+    description: '낮은 장애물 위주로 등장합니다.',
     startScore: 0,
     nextScore: 8,
     obstacleDuration: 1.65,
     coinDuration: 2.15,
-    obstacleWidth: 42,
-    obstacleHeight: 54
+    obstacleTypes: ['low', 'low', 'wide']
   },
   {
     level: 2,
     name: '2단계: 집중',
-    description: '장애물과 코인이 더 빠르게 움직입니다.',
+    description: '높은 장애물과 빠른 장애물이 추가됩니다.',
     startScore: 8,
     nextScore: 16,
     obstacleDuration: 1.25,
     coinDuration: 1.75,
-    obstacleWidth: 50,
-    obstacleHeight: 62
+    obstacleTypes: ['low', 'wide', 'tall', 'fast']
   },
   {
     level: 3,
     name: '3단계: 도전',
-    description: '가장 빠른 속도로 장애물과 코인이 등장합니다.',
+    description: '모든 장애물이 더 빠르게 랜덤 등장합니다.',
     startScore: 16,
     nextScore: 25,
     obstacleDuration: 0.95,
     coinDuration: 1.35,
-    obstacleWidth: 58,
-    obstacleHeight: 70
+    obstacleTypes: ['low', 'wide', 'tall', 'fast', 'fast']
   }
 ];
+
+const obstacleSettings = {
+  low: {
+    label: '낮은 장애물',
+    width: 42,
+    height: 44,
+    bottom: 70,
+    color: '#333',
+    durationMultiplier: 1
+  },
+  wide: {
+    label: '넓은 장애물',
+    width: 72,
+    height: 42,
+    bottom: 70,
+    color: '#4a3f35',
+    durationMultiplier: 1.05
+  },
+  tall: {
+    label: '높은 장애물',
+    width: 46,
+    height: 78,
+    bottom: 70,
+    color: '#2f4858',
+    durationMultiplier: 1.05
+  },
+  fast: {
+    label: '빠른 장애물',
+    width: 38,
+    height: 52,
+    bottom: 70,
+    color: '#8d2f2f',
+    durationMultiplier: 0.72
+  }
+};
 
 const targetScore = levels[levels.length - 1].nextScore;
 const rankingStorageKey = 'jumpTimingGameRanking';
 let score = 0;
 let coinCount = 0;
 let currentLevelIndex = 0;
+let currentObstacleType = 'low';
 let isPlaying = false;
 let isJumping = false;
 let jumpCount = 0;
@@ -155,6 +188,7 @@ function startGame() {
   score = 0;
   coinCount = 0;
   currentLevelIndex = 0;
+  currentObstacleType = 'low';
   isPlaying = true;
   isJumping = false;
   jumpCount = 0;
@@ -189,14 +223,36 @@ function applyLevel(levelIndex) {
   levelNameText.textContent = currentLevel.name;
   levelDescriptionText.textContent = currentLevel.description;
 
-  obstacle.style.animationDuration = `${currentLevel.obstacleDuration}s`;
-  obstacle.style.width = `${currentLevel.obstacleWidth}px`;
-  obstacle.style.height = `${currentLevel.obstacleHeight}px`;
   coin.style.animationDuration = `${currentLevel.coinDuration}s`;
+  setRandomObstacleType();
+}
+
+function setRandomObstacleType() {
+  const currentLevel = levels[currentLevelIndex];
+  const candidates = currentLevel.obstacleTypes;
+  const randomType = candidates[Math.floor(Math.random() * candidates.length)];
+  setObstacleType(randomType);
+}
+
+function setObstacleType(type) {
+  currentObstacleType = type;
+  const currentLevel = levels[currentLevelIndex];
+  const setting = obstacleSettings[type];
+
+  obstacle.className = `obstacle obstacle-${type}`;
+  obstacle.style.width = `${setting.width}px`;
+  obstacle.style.height = `${setting.height}px`;
+  obstacle.style.bottom = `${setting.bottom}px`;
+  obstacle.style.background = setting.color;
+  obstacle.style.animationDuration = `${currentLevel.obstacleDuration * setting.durationMultiplier}s`;
+  obstacle.setAttribute('aria-label', setting.label);
+  obstacle.title = setting.label;
 }
 
 function restartObstacleAnimation() {
+  hasScoredThisObstacle = false;
   obstacle.classList.remove('move');
+  setRandomObstacleType();
   void obstacle.offsetWidth;
   obstacle.classList.add('move');
 }
@@ -265,10 +321,10 @@ function endGame(result) {
 
   if (result === 'win') {
     playWinSound();
-    showEndingMessage('승리!', '3단계까지 모두 통과했습니다.');
+    showEndingMessage('승리!', '3단계까지 모든 장애물을 통과했습니다.');
   } else {
     playLoseSound();
-    showEndingMessage('패배!', `${levels[currentLevelIndex].level}단계에서 장애물에 부딪혔습니다.`);
+    showEndingMessage('패배!', `${levels[currentLevelIndex].level}단계의 ${obstacleSettings[currentObstacleType].label}에 부딪혔습니다.`);
   }
 
   message.classList.remove('hide');
@@ -484,6 +540,12 @@ function checkGameState() {
     hasScoredThisObstacle = false;
   }
 }
+
+obstacle.addEventListener('animationiteration', () => {
+  if (!isPlaying) return;
+  hasScoredThisObstacle = false;
+  setRandomObstacleType();
+});
 
 startBtn.addEventListener('click', startGame);
 gameArea.addEventListener('click', jump);

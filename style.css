@@ -295,3 +295,36 @@ h1 {
   from { right: -50px; transform: rotate(0deg); }
   to { right: 100%; transform: rotate(720deg); }
 }
+
+.obstacle {
+  transition: width 0.08s linear, height 0.08s linear, background 0.08s linear;
+}
+
+.obstacle::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.obstacle-obstacle-low,
+.obstacle-low {
+  border-radius: 8px 8px 2px 2px;
+}
+
+.obstacle-wide {
+  border-radius: 14px 14px 4px 4px;
+}
+
+.obstacle-tall {
+  border-radius: 10px 10px 2px 2px;
+}
+
+.obstacle-fast {
+  border-radius: 50% 50% 8px 8px;
+  box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.18), 0 0 12px rgba(255, 70, 70, 0.35);
+}
