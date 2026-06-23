@@ -6,6 +6,6 @@
   "orientation": "any",
   "scope": "/",
   "short_name": "man-bro.github",
-  "start_url": "/",
+  "start_url": "https://man-bro.github.io/vcgame1/",
   "theme_color": "#ffffff"
 }
