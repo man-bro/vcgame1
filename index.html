@@ -2,48 +2,868 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>점프 타이밍 게임</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      color: #202124;
+      background: linear-gradient(135deg, #def4ff 0%, #fff5d6 100%);
+      touch-action: manipulation;
+    }
+
+    .game-shell {
+      width: min(100%, 760px);
+      height: min(100%, 900px);
+      display: grid;
+      grid-template-rows: auto auto minmax(220px, 1fr) auto auto;
+      gap: clamp(8px, 1.5vh, 14px);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4.8vw, 38px);
+      line-height: 1.05;
+    }
+
+    .description,
+    .tip {
+      margin: 0;
+      color: #555;
+      font-size: clamp(12px, 2.4vw, 15px);
+      line-height: 1.35;
+    }
+
+    .top-panel {
+      display: grid;
+      gap: 8px;
+    }
+
+    .score-board {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-weight: 800;
+      font-size: clamp(14px, 3vw, 20px);
+    }
+
+    .score-board li,
+    .level-info {
+      border: 2px solid #222;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .score-board li {
+      padding: 7px 12px;
+    }
+
+    .level-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 8px 14px;
+      font-size: clamp(12px, 2.5vw, 15px);
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .level-info span:last-child {
+      color: #555;
+      font-weight: 500;
+    }
+
+    .game-frame {
+      position: relative;
+      min-height: 0;
+      border: 4px solid #222;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #87ceeb;
+      box-shadow: 0 10px 0 rgba(0, 0, 0, 0.12);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(#87ceeb 0%, #c8f1ff 64%, #92d65f 64%, #68b83d 100%);
+    }
+
+    .message {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.86);
+      font-size: clamp(15px, 3vw, 20px);
+      line-height: 1.35;
+    }
+
+    .message.hide {
+      display: none;
+    }
+
+    .message strong {
+      font-size: clamp(30px, 7vw, 48px);
+      line-height: 1;
+    }
+
+    .message small {
+      color: #555;
+    }
+
+    .nickname-form {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: min(100%, 430px);
+      margin-top: 4px;
+    }
+
+    input,
+    button {
+      font: inherit;
+    }
+
+    .nickname-form input {
+      min-width: 0;
+      flex: 1 1 190px;
+      padding: 11px 13px;
+      border: 2px solid #222;
+      border-radius: 999px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    .start-btn,
+    .nickname-form button,
+    .clear-ranking-btn {
+      border: 0;
+      border-radius: 999px;
+      background: #222;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .start-btn {
+      justify-self: center;
+      padding: 12px 30px;
+      font-size: clamp(16px, 3vw, 20px);
+    }
+
+    .nickname-form button,
+    .clear-ranking-btn {
+      padding: 11px 16px;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #444;
+    }
+
+    .ranking-panel {
+      min-height: 0;
+      padding: 12px;
+      border: 2px solid #222;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.68);
+      text-align: left;
+      overflow: hidden;
+    }
+
+    .ranking-panel h2 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: clamp(16px, 3vw, 22px);
+    }
+
+    .ranking-list {
+      max-height: min(18vh, 142px);
+      margin: 0;
+      padding-left: 28px;
+      overflow: auto;
+    }
+
+    .ranking-list li {
+      margin: 6px 0;
+      padding: 7px 9px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .ranking-empty {
+      color: #666;
+      text-align: center;
+      list-style: none;
+    }
+
+    .log-name,
+    .log-result {
+      font-weight: 800;
+    }
+
+    .log-info {
+      color: #555;
+    }
+
+    .clear-ranking-btn {
+      display: block;
+      margin: 8px auto 0;
+      background: #666;
+    }
+
+    @media (max-height: 680px) {
+      .description,
+      .tip,
+      .level-info span:last-child {
+        display: none;
+      }
+
+      .game-shell {
+        grid-template-rows: auto auto minmax(190px, 1fr) auto minmax(92px, auto);
+      }
+
+      .ranking-list {
+        max-height: 82px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 8px;
+      }
+
+      .game-frame {
+        border-width: 3px;
+      }
+
+      .score-board li {
+        padding: 6px 9px;
+      }
+    }
+  </style>
+  <link rel="manifest" href="/manifest.json">
 </head>
 <body>
-  <main class="game-wrapper">
-    <h1>점프 타이밍 게임</h1>
-    <p class="description">스페이스바 또는 화면 클릭으로 점프하세요! 더블 점프로 다양한 장애물을 피하고 코인을 모으세요.</p>
-
-    <section class="score-board">
-      <div>단계: <span id="level">1</span> / 3</div>
-      <div>점수: <span id="score">0</span></div>
-      <div>코인: <span id="coinCount">0</span></div>
-      <div>목표: <span id="targetScore">25</span></div>
-    </section>
-
-    <section class="level-info">
-      <span id="levelName">1단계: 연습</span>
-      <span id="levelDescription">낮은/높은/빠른 장애물이 랜덤으로 등장합니다.</span>
-    </section>
-
-    <section id="gameArea" class="game-area">
-      <div id="player" class="player"></div>
-      <div id="obstacle" class="obstacle"></div>
-      <div id="coin" class="coin" aria-label="coin"></div>
-      <div class="ground"></div>
-      <div id="message" class="message">
-        <strong>게임 시작</strong>
-        <span>시작 버튼을 누르세요</span>
+  <main class="game-shell" aria-label="점프 타이밍 게임">
+    <section class="top-panel">
+      <h1>점프 타이밍 게임</h1>
+      <p class="description">스페이스바, 클릭, 터치로 점프해서 장애물을 피하고 코인을 모으세요.</p>
+      <ul class="score-board">
+        <li>단계 <span id="level">1</span> / 3</li>
+        <li>점수 <span id="score">0</span></li>
+        <li>코인 <span id="coinCount">0</span></li>
+        <li>목표 <span id="targetScore">38</span></li>
+      </ul>
+      <div class="level-info">
+        <span id="levelName">1단계: 연습</span>
+        <span id="levelDescription">낮은 장애물이 천천히 등장합니다.</span>
       </div>
     </section>
 
-    <section id="rankingPanel" class="ranking-panel">
-      <h2>플레이 로그 TOP 10</h2>
-      <ol id="rankingList" class="ranking-list"></ol>
-      <button id="clearRankingBtn" class="clear-ranking-btn" type="button">랭킹 초기화</button>
+    <section id="gameFrame" class="game-frame" aria-label="게임 화면">
+      <canvas id="gameCanvas"></canvas>
+      <div id="message" class="message">
+        <strong>게임 시작</strong>
+        <span>시작 버튼을 누르세요.</span>
+        <small>화면 안에서만 플레이되도록 자동으로 크기가 맞춰집니다.</small>
+      </div>
     </section>
 
-    <button id="startBtn" class="start-btn">게임 시작</button>
-    <p class="tip">조작: 스페이스바 / 마우스 클릭 / 터치 · 낮은/높은/넓은/빠른 장애물을 더블 점프로 피하세요</p>
+    <button id="startBtn" class="start-btn" type="button">게임 시작</button>
+    <p class="tip">조작: 스페이스바 / 마우스 클릭 / 터치. 공중에서 한 번 더 눌러 더블 점프할 수 있습니다.</p>
+
+    <section class="ranking-panel" aria-label="플레이 로그">
+      <h2>플레이 로그 TOP 10</h2>
+      <ol id="rankingList" class="ranking-list"></ol>
+      <button id="clearRankingBtn" class="clear-ranking-btn" type="button">기록 초기화</button>
+    </section>
   </main>
 
-  <script src="script.js"></script>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameFrame = document.getElementById('gameFrame');
+    const startBtn = document.getElementById('startBtn');
+    const message = document.getElementById('message');
+    const scoreText = document.getElementById('score');
+    const coinCountText = document.getElementById('coinCount');
+    const targetScoreText = document.getElementById('targetScore');
+    const levelText = document.getElementById('level');
+    const levelNameText = document.getElementById('levelName');
+    const levelDescriptionText = document.getElementById('levelDescription');
+    const rankingList = document.getElementById('rankingList');
+    const clearRankingBtn = document.getElementById('clearRankingBtn');
+
+    const levels = [
+      {
+        level: 1,
+        name: '1단계: 연습',
+        description: '낮은 장애물이 천천히 등장합니다.',
+        startScore: 0,
+        nextScore: 12,
+        speed: 265,
+        coinSpeed: 210,
+        obstacleTypes: ['low', 'low', 'wide']
+      },
+      {
+        level: 2,
+        name: '2단계: 집중',
+        description: '높고 빠른 장애물이 추가됩니다.',
+        startScore: 12,
+        nextScore: 24,
+        speed: 335,
+        coinSpeed: 270,
+        obstacleTypes: ['low', 'wide', 'tall', 'fast']
+      },
+      {
+        level: 3,
+        name: '3단계: 도전',
+        description: '모든 장애물이 더 빠르게 등장합니다.',
+        startScore: 24,
+        nextScore: 38,
+        speed: 415,
+        coinSpeed: 335,
+        obstacleTypes: ['low', 'wide', 'tall', 'fast', 'fast']
+      }
+    ];
+
+    const obstacleSettings = {
+      low: { label: '낮은 장애물', width: 42, height: 44, color: '#333' },
+      wide: { label: '넓은 장애물', width: 72, height: 42, color: '#4a3f35' },
+      tall: { label: '높은 장애물', width: 46, height: 78, color: '#2f4858' },
+      fast: { label: '빠른 장애물', width: 38, height: 52, color: '#8d2f2f' }
+    };
+
+    const rankingStorageKey = 'jumpTimingGameRanking';
+    const targetScore = levels[levels.length - 1].nextScore;
+    const groundOffset = 70;
+    const playerSize = 48;
+    const coinSize = 30;
+    const maxJumpCount = 2;
+    const gravity = 2400;
+    const firstJumpPower = 820;
+    const secondJumpPower = 680;
+
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let score = 0;
+    let coinCount = 0;
+    let currentLevelIndex = 0;
+    let currentObstacleType = 'low';
+    let isPlaying = false;
+    let jumpCount = 0;
+    let playerY = 0;
+    let velocityY = 0;
+    let obstacle = {};
+    let coin = {};
+    let lastTime = 0;
+    let animationId = 0;
+    let lastGameResult = null;
+    let audioContext = null;
+
+    targetScoreText.textContent = targetScore;
+    resizeGame();
+    resetRoundState();
+    applyLevel(0);
+    renderRanking();
+    draw();
+
+    function resizeGame() {
+      const rect = gameFrame.getBoundingClientRect();
+      width = Math.max(320, Math.floor(rect.width));
+      height = Math.max(190, Math.floor(rect.height));
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      playerY = Math.min(playerY || getGroundY(), getGroundY());
+    }
+
+    function getGroundY() {
+      return height - groundOffset - playerSize;
+    }
+
+    function getPlayerRect() {
+      return { x: Math.max(28, width * 0.12), y: playerY, w: playerSize, h: playerSize };
+    }
+
+    function resetRoundState() {
+      score = 0;
+      coinCount = 0;
+      currentLevelIndex = 0;
+      currentObstacleType = 'low';
+      jumpCount = 0;
+      playerY = getGroundY();
+      velocityY = 0;
+      lastGameResult = null;
+      scoreText.textContent = score;
+      coinCountText.textContent = coinCount;
+      spawnObstacle(true);
+      spawnCoin(true);
+    }
+
+    function applyLevel(index) {
+      currentLevelIndex = index;
+      const level = levels[index];
+      levelText.textContent = level.level;
+      levelNameText.textContent = level.name;
+      levelDescriptionText.textContent = level.description;
+    }
+
+    function chooseObstacleType() {
+      const candidates = levels[currentLevelIndex].obstacleTypes;
+      let nextType = candidates[Math.floor(Math.random() * candidates.length)];
+      const uniqueTypes = [...new Set(candidates)];
+      if (uniqueTypes.length > 1) {
+        while (nextType === currentObstacleType) {
+          nextType = candidates[Math.floor(Math.random() * candidates.length)];
+        }
+      }
+      currentObstacleType = nextType;
+      return obstacleSettings[nextType];
+    }
+
+    function spawnObstacle(first = false) {
+      const setting = chooseObstacleType();
+      obstacle = {
+        ...setting,
+        x: width + (first ? 120 : 28 + Math.random() * 80),
+        y: height - groundOffset - setting.height,
+        w: setting.width,
+        h: setting.height,
+        scored: false
+      };
+    }
+
+    function spawnCoin(first = false) {
+      const positions = [height - groundOffset - 130, height - groundOffset - 170, height - groundOffset - 210];
+      const y = Math.max(22, positions[Math.floor(Math.random() * positions.length)]);
+      coin = {
+        x: width + (first ? 280 : 160 + Math.random() * 240),
+        y,
+        w: coinSize,
+        h: coinSize,
+        collected: false,
+        spin: 0
+      };
+    }
+
+    function startGame() {
+      cancelAnimationFrame(animationId);
+      resetRoundState();
+      applyLevel(0);
+      isPlaying = true;
+      lastTime = performance.now();
+      startBtn.textContent = '다시 시작';
+      message.classList.add('hide');
+      getAudioContext();
+      loop(lastTime);
+    }
+
+    function endGame(result) {
+      isPlaying = false;
+      lastGameResult = result;
+      cancelAnimationFrame(animationId);
+      if (result === 'win') {
+        playWinSound();
+        showEndingMessage('승리!', '3단계까지 모든 장애물을 통과했습니다.');
+      } else {
+        playLoseSound();
+        showEndingMessage('실패!', `${levels[currentLevelIndex].level}단계의 ${obstacle.label}에 부딪혔습니다.`);
+      }
+      message.classList.remove('hide');
+      draw();
+    }
+
+    function showEndingMessage(title, subtitle) {
+      message.innerHTML = `
+        <strong>${title}</strong>
+        <span>${subtitle}</span>
+        <span>최종 점수 ${score}점 · 코인 ${coinCount}개</span>
+        <small>닉네임을 남기면 플레이 로그에 저장됩니다.</small>
+        <form id="nicknameForm" class="nickname-form">
+          <input id="nicknameInput" type="text" maxlength="10" placeholder="닉네임 입력" autocomplete="off" />
+          <button type="submit">기록 저장</button>
+        </form>
+      `;
+      document.getElementById('nicknameInput').focus();
+      document.getElementById('nicknameForm').addEventListener('submit', saveCurrentPlayLog);
+    }
+
+    function loop(time) {
+      const dt = Math.min((time - lastTime) / 1000, 0.033);
+      lastTime = time;
+      update(dt);
+      draw();
+      if (isPlaying) {
+        animationId = requestAnimationFrame(loop);
+      }
+    }
+
+    function update(dt) {
+      const level = levels[currentLevelIndex];
+      const player = getPlayerRect();
+
+      if (jumpCount > 0 || playerY < getGroundY()) {
+        playerY -= velocityY * dt;
+        velocityY -= gravity * dt;
+        if (playerY >= getGroundY()) {
+          playerY = getGroundY();
+          velocityY = 0;
+          jumpCount = 0;
+        }
+      }
+
+      obstacle.x -= level.speed * (currentObstacleType === 'fast' ? 1.15 : 1) * dt;
+      coin.x -= level.coinSpeed * dt;
+      coin.spin += dt * 8;
+
+      if (collides(player, obstacle)) {
+        endGame('lose');
+        return;
+      }
+
+      if (!coin.collected && collides(player, coin)) {
+        coin.collected = true;
+        coinCount += 1;
+        score += 2;
+        coinCountText.textContent = coinCount;
+        scoreText.textContent = score;
+        playCoinSound();
+        afterScoreChange();
+      }
+
+      if (!obstacle.scored && obstacle.x + obstacle.w < player.x) {
+        obstacle.scored = true;
+        score += 1;
+        scoreText.textContent = score;
+        afterScoreChange();
+      }
+
+      if (obstacle.x + obstacle.w < -6) {
+        spawnObstacle();
+      }
+
+      if (coin.x + coin.w < -6 || coin.collected) {
+        if (coin.x + coin.w < -6 || coin.collected) {
+          spawnCoin();
+        }
+      }
+    }
+
+    function afterScoreChange() {
+      if (score >= targetScore) {
+        endGame('win');
+        return;
+      }
+
+      const nextLevelIndex = currentLevelIndex + 1;
+      if (nextLevelIndex < levels.length && score >= levels[nextLevelIndex].startScore) {
+        applyLevel(nextLevelIndex);
+        playLevelUpSound();
+        showLevelNotice(levels[nextLevelIndex].name);
+      }
+    }
+
+    function showLevelNotice(text) {
+      const notice = document.createElement('div');
+      notice.textContent = `${text} 진입!`;
+      Object.assign(notice.style, {
+        position: 'absolute',
+        top: '16px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        maxWidth: 'calc(100% - 28px)',
+        padding: '9px 14px',
+        border: '2px solid #222',
+        borderRadius: '999px',
+        background: 'rgba(255,255,255,.9)',
+        fontWeight: '800',
+        zIndex: '3'
+      });
+      gameFrame.appendChild(notice);
+      setTimeout(() => notice.remove(), 1000);
+    }
+
+    function jump() {
+      if (!isPlaying || jumpCount >= maxJumpCount) return;
+      jumpCount += 1;
+      velocityY = jumpCount === 1 ? firstJumpPower : secondJumpPower;
+      playJumpSound();
+    }
+
+    function collides(a, b) {
+      const padding = 4;
+      return a.x + padding < b.x + b.w &&
+        a.x + a.w - padding > b.x &&
+        a.y + padding < b.y + b.h &&
+        a.y + a.h - padding > b.y;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      drawBackground();
+      drawCoin();
+      drawObstacle();
+      drawPlayer();
+    }
+
+    function drawBackground() {
+      const groundY = height - groundOffset;
+      ctx.fillStyle = 'rgba(0,0,0,.34)';
+      ctx.fillRect(0, groundY, width, 4);
+
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      drawCloud(width * 0.18, height * 0.18, 34);
+      drawCloud(width * 0.76, height * 0.24, 28);
+    }
+
+    function drawCloud(x, y, size) {
+      ctx.beginPath();
+      ctx.arc(x, y, size * 0.48, 0, Math.PI * 2);
+      ctx.arc(x + size * 0.38, y - size * 0.18, size * 0.5, 0, Math.PI * 2);
+      ctx.arc(x + size * 0.82, y, size * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawPlayer() {
+      const player = getPlayerRect();
+      ctx.save();
+      ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+      ctx.rotate(jumpCount === 2 ? 0.16 : jumpCount === 1 ? -0.08 : 0);
+      roundRect(-player.w / 2, -player.h / 2, player.w, player.h, 12, '#ff6b6b');
+      ctx.fillStyle = 'rgba(0,0,0,.18)';
+      ctx.fillRect(9, 12, 8, 8);
+      ctx.fillRect(24, 12, 8, 8);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(6, -2, 34, 5);
+      ctx.restore();
+    }
+
+    function drawObstacle() {
+      if (!obstacle.w) return;
+      roundRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h, currentObstacleType === 'fast' ? 18 : 8, obstacle.color);
+      ctx.fillStyle = 'rgba(255,255,255,.32)';
+      ctx.beginPath();
+      ctx.arc(obstacle.x + 16, obstacle.y + 15, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawCoin() {
+      if (coin.collected || !coin.w) return;
+      ctx.save();
+      ctx.translate(coin.x + coin.w / 2, coin.y + coin.h / 2);
+      ctx.rotate(coin.spin);
+      ctx.fillStyle = '#ffd54a';
+      ctx.strokeStyle = '#a87300';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, coin.w / 2 - 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.58)';
+      roundRect(-4, -10, 8, 20, 999, 'rgba(255,255,255,.58)');
+      ctx.restore();
+    }
+
+    function roundRect(x, y, w, h, radius, fillStyle) {
+      const r = Math.min(radius, w / 2, h / 2);
+      ctx.fillStyle = fillStyle;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function getAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      return audioContext;
+    }
+
+    function playTone(frequency, startTime, duration, type = 'sine', volume = 0.15) {
+      try {
+        const audio = getAudioContext();
+        const oscillator = audio.createOscillator();
+        const gain = audio.createGain();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.linearRampToValueAtTime(volume, startTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        oscillator.connect(gain);
+        gain.connect(audio.destination);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      } catch (error) {
+        audioContext = null;
+      }
+    }
+
+    function playJumpSound() {
+      const now = getAudioContext().currentTime;
+      playTone(520, now, 0.08, 'square', 0.1);
+      playTone(780, now + 0.06, 0.1, 'square', 0.08);
+    }
+
+    function playCoinSound() {
+      const now = getAudioContext().currentTime;
+      playTone(880, now, 0.07, 'triangle', 0.12);
+      playTone(1175, now + 0.06, 0.1, 'triangle', 0.12);
+    }
+
+    function playWinSound() {
+      const now = getAudioContext().currentTime;
+      playTone(523, now, 0.12);
+      playTone(659, now + 0.12, 0.12);
+      playTone(784, now + 0.24, 0.15);
+      playTone(1047, now + 0.39, 0.28, 'triangle', 0.18);
+    }
+
+    function playLoseSound() {
+      const now = getAudioContext().currentTime;
+      playTone(220, now, 0.18, 'sawtooth', 0.13);
+      playTone(165, now + 0.16, 0.22, 'sawtooth', 0.11);
+    }
+
+    function playLevelUpSound() {
+      const now = getAudioContext().currentTime;
+      playTone(440, now, 0.08, 'triangle', 0.1);
+      playTone(660, now + 0.08, 0.08, 'triangle', 0.1);
+      playTone(880, now + 0.16, 0.12, 'triangle', 0.12);
+    }
+
+    function saveCurrentPlayLog(event) {
+      event.preventDefault();
+      const input = document.getElementById('nicknameInput');
+      const nickname = input.value.trim() || '이름없음';
+      const playLog = {
+        nickname,
+        score,
+        coinCount,
+        level: levels[currentLevelIndex].level,
+        result: lastGameResult === 'win' ? '승리' : '실패',
+        playedAt: new Date().toLocaleString('ko-KR')
+      };
+      const ranking = getRanking();
+      ranking.unshift(playLog);
+      const topTenRanking = ranking
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          if ((b.coinCount || 0) !== (a.coinCount || 0)) return (b.coinCount || 0) - (a.coinCount || 0);
+          return String(b.playedAt).localeCompare(String(a.playedAt));
+        })
+        .slice(0, 10);
+      localStorage.setItem(rankingStorageKey, JSON.stringify(topTenRanking));
+      renderRanking();
+      message.innerHTML = `
+        <strong>기록 저장 완료!</strong>
+        <span>${escapeHTML(nickname)}님의 기록을 플레이 로그에 저장했습니다.</span>
+      `;
+    }
+
+    function getRanking() {
+      try {
+        return JSON.parse(localStorage.getItem(rankingStorageKey) || '[]');
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function renderRanking() {
+      const ranking = getRanking();
+      if (ranking.length === 0) {
+        rankingList.innerHTML = '<li class="ranking-empty">아직 저장된 플레이 로그가 없습니다.</li>';
+        return;
+      }
+      rankingList.innerHTML = ranking.map((log) => `
+        <li>
+          <span class="log-name">${escapeHTML(log.nickname)}</span>
+          <span class="log-result">${escapeHTML(log.result)}</span>
+          <span class="log-info">점수 ${Number(log.score) || 0}점 · 코인 ${Number(log.coinCount) || 0}개 · ${Number(log.level) || 1}단계 · ${escapeHTML(log.playedAt)}</span>
+        </li>
+      `).join('');
+    }
+
+    function clearRanking() {
+      if (!confirm('저장된 플레이 로그를 모두 삭제할까요?')) return;
+      localStorage.removeItem(rankingStorageKey);
+      renderRanking();
+    }
+
+    function escapeHTML(text) {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    startBtn.addEventListener('click', startGame);
+    gameFrame.addEventListener('click', jump);
+    clearRankingBtn.addEventListener('click', clearRanking);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        jump();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      resizeGame();
+      spawnObstacle(true);
+      spawnCoin(true);
+      draw();
+    });
+  </script>
 </body>
 </html>
